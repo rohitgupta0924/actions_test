@@ -10,7 +10,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
 
     steps:
     - name: Checkout code
@@ -26,8 +26,7 @@ jobs:
 
     - name: Azure Login
       run: |
-        az login --identity -u ${{ secrets.SUBS_MUID }} -o none
-        az account list --output table
+        az login --service-principal --username ${{ secrets.AZURE_CLIENT_ID }} --password ${{ secrets.AZURE_CLIENT_SECRET }} --tenant ${{ secrets.AZURE_TENANT_ID }}
 
     - name: Terraform Init
       run: terraform init
