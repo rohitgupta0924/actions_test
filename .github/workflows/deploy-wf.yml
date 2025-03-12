@@ -1,0 +1,51 @@
+name: Deploy Web App
+
+on:
+  workflow_call:
+    inputs:
+      webapp_type:
+        description: 'Type of web app to deploy (linux or windows)'
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Install unzip
+      run: sudo apt-get update && sudo apt-get install -y unzip  
+      
+    - name: Set up Terraform
+      uses: hashicorp/setup-terraform@v1
+      with:
+        terraform_version: 1.0.0
+
+    - name: Azure Login
+      run: |
+        az login --identity -u ${{ secrets.SUBS_MUID }} -o none
+        az account list --output table
+
+    - name: Terraform Init
+      run: terraform init
+      working-directory: invocation
+
+    - name: Terraform Apply
+      run: terraform apply -auto-approve
+      working-directory: invocation
+      env:
+        ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+        ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+        ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+
+    - name: Display Message for Windows Web App
+      if: ${{ inputs.webapp_type == 'windows' }}
+      run: echo "Your Windows WEBAPP is ready to go!"
+
+    - name: Display Message for Linux Web App
+      if: ${{ inputs.webapp_type == 'linux' }}
+      run: echo "Your Linux WEBAPP  ready to go!"
